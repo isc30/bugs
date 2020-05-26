@@ -1,0 +1,38 @@
+﻿@page "/"
+@inject HttpClient fetch
+
+<h1>Both Checks Should Pass</h1>
+
+@*<TestLib.Component1 />*@
+
+<ul>
+    <li class='@GetClassName(StaticAssetsAvailable)'><b>Is <code>_content/TestLib/styles.css</code> available</b>: @StaticAssetsAvailable</li>
+    <li class='@GetClassName(TestLibNoBoot)'><b>Is <code>TestLib</code> NOT part of blazor.boot.json</b>: @TestLibNoBoot</li>
+</ul>
+
+@code {
+    private bool? StaticAssetsAvailable = null;
+    private bool? TestLibNoBoot = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        StaticAssetsAvailable = (await fetch.GetAsync("_content/TestLib/styles.css")).IsSuccessStatusCode;
+
+        var blazorBootJsonTask = await fetch.GetAsync("_framework/blazor.boot.json");
+        var blazorBootJson = await blazorBootJsonTask.Content.ReadAsStringAsync();
+
+        TestLibNoBoot = !blazorBootJson.Contains("TestLib");
+    }
+
+    private static string GetClassName(bool? result)
+    {
+        if (!result.HasValue)
+        {
+            return null;
+        }
+
+        return result.Value ? "pass" : "fail";
+    }
+}
